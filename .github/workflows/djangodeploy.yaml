@@ -1,0 +1,40 @@
+name: djangodeploy
+
+on: # on 은 이벤트
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Set UP Python 3.10 # 파이썬 설치
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: install dependencies
+        run: |
+          python -m pip instamm --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Login to Docker Hub
+        uses: docker/login@v1
+        with:
+          username: whdgh
+          password: dckr_pat_Up1BZgK_mRJvJ-JEfHekloQXoa4 # secret 이용도 가능
+      
+      - name: build & release to Docker Hub
+        env:
+          NAME: whdgh
+          REPO: djangodeploy # repository 이름
+        run: |
+          docker build -t $REPO .
+          docker tag $REPO:latest $NAME/$REPO:latest 
+          docker push $NAME/$REPO:latest
