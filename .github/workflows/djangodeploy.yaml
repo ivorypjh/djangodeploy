@@ -10,6 +10,16 @@ permissions:
   id-token: write
   contents: read # 로그인에 필요함
 
+# 환경 변수 추가
+env:
+  AWS_REGION: # 리전
+  ECR_REPOSITORY: # 자신의 ECR 레포지토리 이름
+  ECS_SERVICE: # ECS 의 서비스 이름
+  ECS_CLUSTER: # 클러스터 이름
+  # 태스크 정의 이름 위치로 여기에서는 파일을 사용
+  ECS_TASK_DEFINITION: ./task-definition.json
+  CONTAINER_NAME: # 컨테이너 이름
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -37,4 +47,37 @@ jobs:
           role-to-assume: arn:aws:iam::851528909564:role/djangodeployrole # role 의 ARN
           role-session-name: sampleName # 이름은 원하는대로
           aws-region: ap-northeast-2 # 리전 정보
+          
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@62f4f872db3836360b72999f4b87f1ff13310f3a
+
+      - name: Build, tag, and push image to Amazon ECR
+        id: build-image
+        env:
+          ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
+          IMAGE_TAG: ${{ github.sha }}
+        run: |
+          # Build a docker container and
+          # push it to ECR so that it can
+          # be deployed to ECS.
+          docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          echo "image=$ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG" >> $GITHUB_OUTPUT
+
+      - name: Fill in the new image ID in the Amazon ECS task definition
+        id: task-def
+        uses: aws-actions/amazon-ecs-render-task-definition@c804dfbdd57f713b6c079302a4c01db7017a36fc
+        with:
+          task-definition: ${{ env.ECS_TASK_DEFINITION }}
+          container-name: ${{ env.CONTAINER_NAME }}
+          image: ${{ steps.build-image.outputs.image }}
+
+      - name: Deploy Amazon ECS task definition
+        uses: aws-actions/amazon-ecs-deploy-task-definition@df9643053eda01f169e64a0e60233aacca83799a
+        with:
+          task-definition: ${{ steps.task-def.outputs.task-definition }}
+          service: ${{ env.ECS_SERVICE }}
+          cluster: ${{ env.ECS_CLUSTER }}
+          wait-for-service-stability: true
 
