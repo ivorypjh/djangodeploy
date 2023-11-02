@@ -1,0 +1,11 @@
+version: "3"
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile # dockerfile 의 이름
+    # 수행할 명령 - Dockerfile 의 CMD 명령을 가져왔음
+    command: "python manage.py runserver 0.0.0.0:80"
+    ports: # 포트 매핑
+      - "80"

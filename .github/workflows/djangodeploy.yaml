@@ -23,18 +23,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
-
-      - name: Login to Docker Hub
-        uses: docker/login-action@v1
-        with:
-          username: whdgh
-          password: dckr_pat_Up1BZgK_mRJvJ-JEfHekloQXoa4 # secret 이용도 가능
       
-      - name: build & release to Docker Hub
-        env:
-          NAME: whdgh
-          REPO: djangodeploy # repository 이름
-        run: |
-          docker build -t $REPO .
-          docker tag $REPO:latest $NAME/$REPO:latest 
-          docker push $NAME/$REPO:latest
+      - name: build docker compose
+        run: docker-compose
+
