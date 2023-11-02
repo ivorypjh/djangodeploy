@@ -6,6 +6,10 @@ on: # on 은 이벤트
   pull_request:
     branches: ["main"]
 
+permissions:
+  id-token: write
+  contents: read # 로그인에 필요함
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -26,4 +30,11 @@ jobs:
       
       - name: build docker compose
         run: docker-compose
+
+      - name: configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::851528909564:role/djangodeployrole # role 의 ARN
+          role-session-name: sampleName # 이름은 원하는대로
+          aws-region: ap-northeast-2 # 리전 정보
 
